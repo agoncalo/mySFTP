@@ -6,16 +6,16 @@ var ls = require('ls');
 var server = dnode({
 	mkdir : function (s, cb) {
 		mkdirp(s, function(err) {
-			console.log("Erro ao criar pasta.");
-		}
+			cb(console.log("Erro ao criar pasta."));
+		});
 	},
 	rmdir : function (s, cb) {
 		rmdir(s, function(err) {
-			console.log("Erro ao remover pasta.");
-		}
+			cb(console.log("Erro ao remover pasta."));
+		});
 	},
 	ls : function (s, cb) {
-		
+	
 	},
 	put : function (s, cb) {
 	
@@ -24,13 +24,16 @@ var server = dnode({
 	
 	},
 	cd : function (s, cb) {
-	
+		
 	},
 	useradd : function (s, cb) {
-	
+		mkdirp(s, function(err) {
+			if (err) cb("ERRO");
+			else cb("OK");
+		});
 	},
 	userdel : function (s, cb) {
-	
+		cb("OK");
 	}
 });
 

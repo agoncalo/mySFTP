@@ -4,32 +4,58 @@ var dnode = require('dnode');
 
 app.post('/', function(req, res) {
 	req.on('data', function (chunk) {
-		var cmd = split(chunk, " ");
+		var cmd = chunk.toString('utf-8').split(" ");
 		switch(cmd[0]) {
 			case "mkdir":
-				var ftp = dnode.connect(7000);
+				var d = dnode.connect(7000);
+				d.on('remote', function(remote) {
+					remote.mkdir(cmd[1], function(s) {
+						console.log(s);
+					});;
+				});
 				break;
 			case "rmdir":
-				var ftp = dnode.connect(7000);
+				var d = dnode.connect(7000);
+				d.on('remote', function(remote) {
+					remote.rmdir(cmd[1], function(s) {
+						console.log(s);
+					});;
+				});
 				break;
 			case "ls":
-				var ftp = dnode.connect(7000);
+				var d = dnode.connect(7000);
 				break;
 			case "put":
-				var ftp = dnode.connect(7000);
+				var d = dnode.connect(7000);
 				break;
 			case "get":
-				var ftp = dnode.connect(7000);
+				var d = dnode.connect(7000);
 				break;
 			case "cd":
-				var ftp = dnode.connect(7000);
+				var d = dnode.connect(7000);
 				break;
 			case "useradd":
-				var ftp = dnode.connect(9000);
+				var d = dnode.connect(9000);
+				d.on('remote', function(remote) {
+					remote.useradd(cmd[1], cmd[2], function(s) {
+						res.send(s);
+						d.end();
+					});
+				});
 				break;
 			case "userdel":
-				var ftp = dnode.connect(9000);
+				var d = dnode.connect(9000);
+				d.on('remote', function(remote) {
+					remote.userdel(cmd[1], function(s) {
+						res.send(s);
+						d.end();
+					});
+				});
 				break;
+			default:
+				res.send("Invalid command\n");
 		}
 	});
 });
+
+app.listen(8000);
