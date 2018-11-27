@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+ 	<script src="script.js"></script>
+	<script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+	<title>MySFTP</title>
+
+<style>
+.navbar-fixed-left {
+  width: 250px;
+  position: fixed;
+  border-radius: 0;
+  height: 100%;
+}
+.main {
+	margin-left:250px;
+}
+input[type=text] {
+  background-color: inherit;
+  border: none;
+  border-bottom: 2px solid white;
+  color:inherit;
+  width: 100%;
+}
+
+.navbar-header {
+	font-size:20pt;
+	text-align:center;
+}
+
+.footer {
+  padding: 25px;
+}	
+.button {
+	left: 50%;
+}
+
+</style>
+</head>
+
+<body>
+<div class="navbar navbar-inverse navbar-fixed-left bg-dark text-light">
+<div class="navbar-header" style="width:100%;">MySFTP</div>
+<div style="width:100%;">By: Antônio M. Filho (agoncalo)</div>
+
+<form>
+<div class="form-group">
+<input type="email" class="form-control" placeholder="Enter email">
+</div>
+<div class="form-group">
+<input type="password" class="form-control" placeholder="Enter password">
+</div>
+</form>
+
+<div>
+<button class="btn btn-primary">Sign in</button>
+<button class="btn btn-secondary">Sign up</button>
+</div>
+
+
+
+<div style="width:100%;">
+Commands avaible:
+<ul>
+<li>useradd</li>
+<li>userdel</li>
+<li>mkdir</li>
+<li>rmdir</li>
+<li>ls</li>
+<li>put</li>
+<li>get</li>
+<li>cd</li>
+</ul>
+
+</div>
+
+
+</div>
+
+<div class="main">
+<div class="navbar footer bg-secondary text-light">
+
+<form type="submit" style="width:100%;">
+<input type="text" placeholder="Type your command here">
+<input type="submit" style="position: absolute; left: -9999px;">
+</form>
+
+
+</div>
+
+
+
+
+
+
+</body>
+</html>
