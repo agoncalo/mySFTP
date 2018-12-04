@@ -1,0 +1,561 @@
+\chapter{Modelagem computacional}
+\label{sec:model}
+Para criar-se um modelo computacional da mama afetada pelo tumor de maneira adequada ao processamento pelo método dos elementos finitos, inicialmente é necessário definir o modelo matemático com o qual a malha será construída. O modelo escolhido para este trabalho é o modelo de mama extremamente denso definido por \citeonline{wahab2016thermal}, este último utilizando como base os modelos de \citeonline{sudharsan1999surface}, mais tarde aprimorados em \cite{ng2001improved}. O modelo extremamente denso fornece um grande domínio glandular em relação aos demais modelos de Wahab, possibilitando assim um maior espaço para buscas pelos algoritmos a serem utilizados neste trabalho. A tabela \ref{tab:wahab1} mostra a proporção dos tecidos presentes no modelo extramamente denso em comparação com os demais modelos de Wahab e os antigos modelos de Sudharsan. As camadas presentes neste modelo são camadas de músculo, glândula, gordura e tumor, definidos, respectivamente, como $D_1$, $D_2$, $D_3$ e $T_1$, onde o tumor será criado aleatoriamente pelo AG dentro do domínio glandular. A mesma denominação será utilizada neste trabalho.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabularx}{\textwidth}{|lXXX|}
+    \hline
+    Composição de tecidos (\%) & Músculo ($D_1$) & Glândula ($D_2$) & Gordura ($D_3$)  \\ \hline
+    Extremamente denso (ED) & 20 & 70 & 10 \\
+    Heterogeneamente denso (HD) & 20 & 60 & 20 \\
+    Fibro-glandular disperso (SF) & 20 & 40 & 40 \\
+    Majoritariamente gorduroso (PF) & 10 & 20 & 70 \\
+    Modelo de Sudharsan & 26.5 & 54.1 & 19.4 \\ \hline
+    \end{tabularx}
+    \caption{Comparativo da composição dos tecidos retirado de \citeonline{wahab2016thermal}}
+    \label{tab:wahab1}
+\end{table}
+
+Estes diferentes tipos de camada são utilizados nos trabalhos de Wahab como domínios onde existem diferentes propriedades físicas dos tecidos. Estas diferenças físicas podem ser observadas na tabela \ref{tab:wahab2}, e também serão utilizadas neste trabalho durante o cálculo da PBHTE por meio da discretização dos elementos finitos.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabularx}{\textwidth}{|lXXXX|}
+    \hline
+Características físicas & Músculo ($D_1$) & Glândula ($D_2$) & Gordura ($D_3$) & Tumor ($T_1$) \\ \hline
+Condutividade térmica (W/m $^\circ$C) & 0.48 & 0.48 & 0.21 & 0.48 \\ 
+Geração de calor metabólico (W/m$^3$) & 700 & 700 & 400 & 8720\\ 
+Perfusão sanguínea (1/s) & 0.8e-3 & 0.5e-3 & 0.2e-3 & 0.1e-1 \\ 
+Calor específico do sangue (J/kg $^\circ$C) & 4200 & 4200 & 4200 & 4200 \\ 
+Densidade do sangue (kg/m$^3$) & 1060 & 1060 & 1060 & 1060 \\ \hline
+    \end{tabularx}
+    \caption{Características físicas dos diferentes tecidos da mama}
+    \label{tab:wahab2}
+\end{table}
+
+Por definição, os modelos de Wahab podem ser descritos como dois semicírculos sobrepostos de 7,2cm e 6,7cm de raio, respectivamente, delimitando a área gordurosa da pele; uma semielipse com 13,4cm de eixo maior horizontal e 2,2 cm de eixo menor, na vertical, define a camada muscular; a parte entre a gordura e o músculo é definida como a glândula da mama. Um tumor circular é adicionado na área da glândula mamária com raio aleatório.
+
+O modelo de referência utiliza os valores de x e y como 3,0cm e 4,0cm, respectivamente, para o centro do tumor, e 1cm de raio. Este modelo de referência pode ser observado na figura \ref{fig:modelo}.
+
+\vspace{15px}
+
+\begin{figure}[!ht]
+	\centering
+	\begin{tikzpicture}[scale=6.5,thick]
+
+	\begin{scope}
+	\clip (-0.72,0) rectangle (0.72,0.72);
+	\draw[fill=pink!20!orange!50] (0,0) circle[radius=0.72];
+	\draw[fill=pink!20!orange!20] (0,0) circle[radius=0.67];
+	\draw[fill=pink!20!orange!30] (0,0) ellipse[x radius=0.67,y radius=0.22];
+
+	\draw (-0.72,0) -- (0.72,0);
+	\draw[fill=red!20!orange!30!blue!10] (0.3,0.4) circle [radius=0.1];
+
+	\node at (-0.4,0.67) {$D_3$};
+	\node at (0,0.44) {$D_2$};
+	\node at (0,0.1) {$D_1$};
+	\node at (0.3,0.4) {$T_1$};
+	\end{scope}
+
+	\begin{scope}
+
+	\draw[latex-latex] (1,0.5) -- (1,0.3) node[midway,above ,sloped] { 2cm};
+
+	\draw[latex-latex] (1.4,0.72) -- (1.4,0) node[midway,above ,sloped] { 7,2cm};
+	\draw[latex-latex] (1.2,0.67) -- (1.2,0) node[midway,above ,sloped] { 6,7cm};
+	\draw[latex-latex] (1,0.22) -- (1,0) node[midway,above ,sloped] { 2,2cm};
+
+	\draw[dashed] (0,0.72) -- (1.4,0.72);
+	\draw[dashed] (0,0.67) -- (1.2,0.67);
+	\draw[dashed] (0,0.22) -- (1,0.22);
+	\draw[dashed] (0.72,0) -- (1.4,0);
+
+	\draw[dashed] (0.3,0.3) -- (1,0.3);
+	\draw[dashed] (0.3,0.5) -- (1,0.5);
+
+	\foreach \x in {-0.67,0.67}
+		\draw[dashed] (\x,0) -- (\x,-0.2);
+		
+	\foreach \x in {-0.72,0.72}
+		\draw[dashed] (\x,0) -- (\x,-0.4);
+
+	\draw[latex-latex] (-0.72,-0.4) -- (0.72,-0.4)node[midway,above ,sloped] { 14,4cm};
+
+	\draw[latex-latex] (-0.67,-0.2) -- (0.67,-0.2)node[midway,above ,sloped] { 13,4cm};
+
+	\end{scope}
+	\end{tikzpicture}
+	\caption{Modelo de câncer de mama utilizado como referência}
+	\label{fig:modelo}
+\end{figure}
+
+Para cada um dos modelos subsequentes criados pelo algoritmo genético a posição do centro do tumor e seu raio são definidos aleatoriamente de forma que o tumor esteja contido dentro do espaço da glândula.
+
+\section{Construção da malha através do Gmsh}
+\label{sec:gmshgen}
+A discretização da PBHTE sobre o modelo de Wahab por meio do MEF requer a geração de uma malha computacional adequada. Através do software de geração de malhas de elementos finitos Gmsh, ferramenta \textit{open-source} desenvolvida em C++ por \citeonline{geuzaine2009gmsh}, é possível gerar malhas computacionais adequadas para o processamento do MEF e cálculo da PBHTE dentre os pontos. A geração da malha sobre o modelo ED de Wahab através do Gmsh e sua transformação em malhas dentro do programa principal é um processo dividido nas seguintes etapas:
+
+\begin{enumerate}
+    \item Inicialmente é criado um arquivo de modelo compatível com o Gmsh. Este arquivo pode conter pontos, linhas, curvas, superfícies e a definição nominal para cada uma das formas físicas que a malha deverá possuir, podendo agrupar diferentes conjuntos de pontos da malha em camadas. Os grupos físicos resultantes deste processo são definidos como as camadas do modelo da mama, e receberão, durante o cálculo da PBHTE, propriedades físicas diferentes \cite[p. 8-9]{avdis2012gmsh}.
+    
+    \item O arquivo resultante da primeira etapa é um arquivo de malha. O arquivo consiste em uma lista de nós com sua posição espacial, e uma lista de elementos finitos. Os elementos finitos são compostos de nós e um grupo físico, como descrito na primeira etapa do processo. Este arquivo deve ser lido pelo programa e transformado em matrizes com as coordenadas dos pontos e a tabela de elementos.
+\end{enumerate}
+ 
+
+Como pode ser observado no gráfico da figura \ref{fig:time}, o tempo de criação dos modelos aumenta consideravelmente com o refinamento da malha. Para amenizar o problema, foi permitido que o restante da malha tenha um refinamento com menor granularidade que o próprio tumor. Os modelos também foram definidos com o refinamento arbitrário de 5mm. Isto proporciona que as execuções do AG possam ocorrer em tempo hábil, uma vez que há um grande número de modelos a ser criado em cada avaliação de modelo pelo AG.
+
+\begin{figure}[!ht]
+\centering
+\pgfplotsset{compat=1.8}
+\begin{tikzpicture}
+\begin{axis}[width=0.8\textwidth,height=5cm,xlabel=Refinamento do tumor (em m),ylabel=Tempo de execução (s),x dir = reverse]
+\addplot table[only marks,x=he,y=time,col sep=comma] {timenormal.csv};
+\end{axis}
+\end{tikzpicture}
+\caption{Tempo de criação de malhas pelo Gmsh}\label{fig:time}
+\end{figure}
+
+\begin{figure}[!ht]
+\centering
+    \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth,trim={2cm 5.5cm 2cm 3cm},clip]{breast_model.png}
+    \caption{Modelo}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{0.9\textwidth}
+    \centering
+    \includegraphics[width=0.8\textwidth,trim={2cm 5cm 2cm 3cm},clip]{breast_mesh.png}
+    \caption{Malha}
+    \end{subfigure}
+    \caption{(a) Modelo de referência para os testes e (b) malha correspondente criados a partir do Gmsh}\label{fig:model}
+\end{figure}
+
+\section{Cálculo da temperatura no modelo}
+Para adicionar propriedades físicas às malhas, é necessário obter a matriz de nós e elementos obtidos através do Gmsh. Os elementos triangulares no Gmsh já pertencem a uma camada física definida para cada tecido, identificada de acordo com sua numeração no processo de criação do modelo. Então, deve-se definir os elementos de contorno do elemento para o cálculo da PBHTE simplificada no contorno através do MEF, e então aplicá-la aos elementos internos da malha. Os nós do contorno externo do modelo, ou seja, da camada de gordura externa da mama, são separados dos demais através da condição
+
+\begin{equation}
+|(x^2 + y^2) - R| < \textrm{offset}
+\end{equation}
+
+\noindent onde $(x, y)$ indicam a posição do nó e $R$ o raio externo do modelo para, onde é definido um \textit{offset} arbitrário de acordo com a precisão de ponto flutuante da máquina. Já os nós do contorno interno, presentes na parede muscular do tecido da mama, são simplesmente condicionados à função
+
+\begin{equation}
+y < \textrm{offset}
+\end{equation}
+
+\noindent devido à face interna do modelo ser um segmento do eixo $y$ do plano cartesiano, onde $y \approx 0$. Após a segregação dos nós de contorno e nós internos, os elementos associados aos nós de contorno também são selecionados. Os elementos da base da mama são então definidos com temperatura prescrita de $37^\circ$. O restante dos nós têm sua temperatura calculada pela resolução do sistema de equações lineares \ref{eq:lin}.
+
+
+
+
+
+
+
+
+\chapter{Algoritmos Genéticos para Detecção do Câncer de Mama}
+A aplicação de AGs é um dos pontos principais deste trabalho. Esta seção aborda o funcionamento básico de algoritmos genéticos aplicados ao problema de biotransferência de calor, bem como destaca diferentes características das três estratégias utilizadas para resolver o problema.
+
+Algoritmos genéticos são técnicas de otimização e busca baseados nos processo de genética e seleção natural. Os AGs trabalham com uma população de modelos, chamados de ``indivíduos'', e os evoluem baseados no quão ``aptos'' estes são para serem utilizados em gerações futuras. Esta ``aptidão'' utiliza de regras específicas de otimização em relação ao problema a ser tratado, e. g., maximização ou minimização de uma função de erro ou de custo. \citeonline{haupt2004practical} cita, dentre algumas das vantagens da utilização deste tipo de algoritmo,
+\begin{itemize}
+\item A possibilidade de se otimizar com variáveis contínuas ou discretas,
+\item A possibilidade de trabalhar em escassez de informações prévias quanto ao problema,
+\item A possibilidade da realização de buscas simultâneas a partir de uma grande variedade de amostras no domínio,
+\item A capacidade de lidar com um grande número de variáveis,
+\item A capacidade de otimização de variáveis com topologias complexas,
+\item A capacidade de trabalhar com dados gerados numericamente e funções analíticas
+\end{itemize}
+
+\noindent dentre vários outros fatores onde outras formas de otimização têm dificuldades de trabalhar. Estes e outros fatores são determinantes na escolha do AG como forma ideal para solução do problema de detecção do câncer de mama, onde a topologia do problema é complexa, poucas informações prévias são inseridas no algoritmo e são necessários encontrar todos os parâmetros do problema inverso com eficiência para tornar o algoritmo viável na detecção de tumores.
+
+\section{Componentes de um AG}
+Ainda segundo Haupt, os AGs possuem, como qualquer outro algoritmo de otimização, variáveis de otimização, funções de erro e o erro em si. Os principais componentes exclusivos de um AG incluem uma política de seleção de indivíduos e operadores genéticos, que trabalham com os cromossomos dos indivíduos das populações. Para este trabalho outros conceitos também foram utilizados e, além de uma nova proposta de esquematização de AG, dois dos principais tipos de algoritmos genéticos foram utilizados para validar as capacidades da estratégia proposta.
+
+\subsection{Variáveis e função de erro}
+A função de erro de um AG é o que determina a aptidão de cada indivíduo de uma população, e influencia diretamente na sua seleção e no compartilhamento de seus genes com outros indivíduos, bem como sua manutenção ao longo das gerações. Esta função, muitas das vezes assimilada ao custo em um problema de otimização, pode ser uma função matemática ou mesmo um experimento que satisfaça as condições necessárias para avaliar um indivíduo de maneira eficaz que guie o processo à uma solução do problema. No caso da detecção do câncer, a função utilizada para calcular o erro é a função apresentada em \ref{eq:objfunc}. Todos os indivíduos criados ao longo das gerações presentes durante o processo do AG terão sua temperatura calculada e comparada com o indivíduo utilizado como referência, e esta diferença por mínimos quadrados será utilizada como erro do indivíduo. Indivíduos com o menor erro em relação à referência tenderão a ser selecionados mais vezes para fazer parte do processo do AG, ou seja, serão considerados mais ``aptos'' para a resolução do problema tratado. Os cromossomos de cada indivíduo a ser avaliado neste trabalho são definidos como
+
+\begin{equation}
+\textrm{cromossomo} = [ r, x, y, \omega ]
+\end{equation}
+
+\noindent com $x$ e $y$ sendo as posições no plano cartesiano, $r$ o raio do tumor e $\omega$ a taxa de perfusão sanguínea, conforme descrição feita na definição do problema, seção \ref{sec:def}. A função de aptidão que o AG utiliza, então, tem o objetivo de minimizar a equação \ref{eq:objfunc}.
+
+\subsection{AG contínuo}
+Uma vez que o domínio de todas as variáveis encontra-se em um espaço contínuo, a utilização de um AG contínuo é o que melhor satisfaz o problema, uma vez que utiliza melhor a precisão do sistema onde o algoritmo for implementado. Ao discretizar-se as variáveis para uma solução através de um AG binário, uma grande parte da informação seria perdida e, portanto, este foi descartado. As variáveis de um AG contínuo não necessitam de codificação, e as variáveis dos cromossomos utilizados no problema utilizam da mesma precisão presente na máquina. Sua busca agora pode ocorrer em qualquer região do domínio da mama sem que hajam imprecisões ocorridas devido à discretização do domínio.
+
+\subsection{População inicial}
+Para criar a população inicial, primeiramente deve-se definir o tamanho da população, $N_{pop}$. A matriz $pop$ terá tamanho $N$ será então utilizada para armazenar os cromossomos e os valores de erro de todos os indivíduos presentes na população. Cada linha $i$ da matriz de indivíduos é então inicializada de forma a respeitar os limites físicos das variáveis, determinados arbitrariamente na tabela \ref{tab:minmax}, de forma
+
+\begin{equation}
+\textrm{pop}(i,j) = \textrm{unifrnd}(\textrm{min}(j), \textrm{max}(j));
+\end{equation}
+
+\noindent onde unifrnd(min, max) é uma função que retorna um número aleatório de maneira uniforme dentro do intervalo definido pelos seus parâmetros. Para este trabalho os tumores foram considerados presentes apenas na parte da glândula mamária. Logo, é necessário lembrar que todas as variáveis passam por uma verificação de pertencimento ao domínio $D_2$ da mama e, caso os parâmetros criem um modelo inválido, o indivíduo é descartado.
+
+\begin{table}[!ht]
+\centering
+\begin{tabularx}{0.5\textwidth}{lll}
+\hline Variável & Valor mínimo & Valor máximo \\ \hline
+	$x$ & -0.0670 & 0.0670 \\
+	$y$ & 0 & 0.0670 \\
+	$r$ & 0 & 0.0670 \\
+	$\omega$ & 0.0085 & 0.0115 \\ \hline
+\end{tabularx}
+\caption{Valores mínimos e máximos das variáveis da população inicial}
+\label{tab:minmax}
+\end{table}
+
+\label{sec:verify}
+Após a geração de cada modelo durante a etapa inicial e etapas subsequentes de aplicação de operadores do AG, é necessária uma verificação para detectar se o tumor está dentro do domínio esperado. Dado o tumor $T_1$ de posição $x_r$ e raio $r$; a partir do raio da circunferência interna da glândula $R$, são impostas duas restrições aos modelos: \begin{enumerate}
+	\item A distância euclidiana $d$ do centro do tumor e o centro do círculo interno que define a glândula somado ao raio devem ser menores que o raio do círculo interno da forma
+	\begin{equation}
+		d(x_r,(0,0)) + r < R
+	\end{equation}
+
+	\item Nenhum dos pontos que pertencem à $T_u$ podem estar abaixo da meia elipse que define a camada muscular $D_1$ da mama.
+\end{enumerate}
+
+Após a verificação de validade o modelo de tumor é então avaliado de acordo com a função objetivo e tem o valor de erro adicionado à sua linha na matriz. A tabela \ref{tab:initpop} apresenta uma amostra da população inicial gerada após este processo.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{llllll}
+\hline $n$ & $r$ & $x$ & $y$ & $\omega$ & $J(x_r,r,\omega)$ \\ \hline
+1&4.4240e-03 & -7.6760e-03 &  2.0815e-02  & 9.0751e-03 &  4.9570e-01 \\
+2&3.6249e-03  & 4.5197e-02 &  3.5152e-02 &  8.6550e-03  & 2.2727e-01\\
+3&3.0734e-03 & -8.9273e-04  & 3.9462e-02 &  9.4868e-03  & 4.7959e-01\\
+4&6.3060e-03 &  4.4633e-02 &  2.5515e-02 &  1.0708e-02  & 3.1003e-01\\
+5&2.9954e-03 &  3.9182e-02  & 2.1697e-02 &  9.1747e-03  & 4.5592e-01\\
+\hline
+\end{tabular}
+\caption{Exemplo de população inicial}\label{tab:initpop}
+\end{table}
+
+Durante diversas etapas do AG a matriz da população será então ordenada de forma ascendente do valor de custo $J(x_r,r,\omega)$ de forma que os melhores indivíduos, com o menor erro, fiquem na parte de cima da matriz.
+
+\subsection{Seleção em torneio}
+A política de seleção em um AG é o que define quais indivíduos devem ser utilizados para a aplicação dos operadores do AG. Dois pares de cromossomos são selecionados de $pop$ e então utilizados para produzir dois novos cromossomos, denominados de ``filhos''. O processo de seleção ocorre até que a matriz $children$, que aloca os filhos de cada geração, seja preenchida. A matriz $children$ possui tamanho $N_{pop} \times pc$, onde $pc$ é a porcentagem de filhos a serem gerados para a próxima iteração, inserida como parâmetro no AG.
+
+A seleção escolhida para este problema é a seleção em torneio, uma das mais utilizadas no meio acadêmico \cite{haupt2004practical}, em sua forma não-determinística. Nesta estratégia de seleção é escolhido um pequeno subconjunto de $pop$. Dois indivíduos desse subconjunto são escolhidos aleatoriamente com uma probabilidade $p$ definida pela função
+
+\begin{equation}
+\label{eq:torn}
+p_i = p_1 ((1-p_1)^{i-1})
+\end{equation}
+
+\noindent onde $p_1$ é o indivíduo com a maior aptidão do subconjunto. A tabela \ref{tab:torn} mostra as probabilidades de seleção de diferentes indivíduos pela política de seleção em torneio. A forma determinística do algoritmo de seleção em torneio selecionaria $p_1$ em todos os possíveis torneios, enquanto que a forma não-determinística permite a seleção de indivíduos com menor aptidão com uma probabilidade menor que os indivíduos com maior aptidão. A tabela \ref{tab:torn} mostra a probabilidade de seleção dos indivíduos com $p_1 = 0,8$.
+
+\begin{table}[!ht]
+\centering
+\begin{tabularx}{0.5\textwidth}{llll}
+\hline $n$ & $n_{pop}$ & $J(x_r,r,\omega)$ & $p$ \\ \hline
+1&3&5,3105e-02&0,80000\\
+2&5&7,5637e-02&0,16000 \\
+3&10&1,0379e-01&0,03200 \\
+4&167&9,6803e-01&0,00640 \\
+5&188&1,7550e+00&0,00128 \\ \hline
+\end{tabularx}
+\caption{Probabilidade de seleção de indivíduos de um subconjunto por torneio}
+\label{tab:torn}
+\end{table}
+
+Vale ressaltar que, na tabela \ref{tab:torn}, a posição $n_{pop}$ do indivíduo na população geral não influencia diretamente na seleção de determinado indivíduo torneio; esta última é influenciada diretamente apenas pela sua colocação $n$ dentro do subconjunto, que é ordenada do indivíduo com maior aptidão para o menor. O algoritmo \ref{alg:tourn} mostra o pseudocódigo da implementação da seleção em torneio.
+
+O gráfico \ref{fig:tourn} mostra a porcentagem de seleções de cada indivíduos em um experimento conduzido com 10.000 seleções em torneio para um tamanho de torneio $T=5$. O indivíduo $n=1$ é o melhor indivíduo da população e $n=200$ o pior.
+
+\begin{figure}[!ht]
+\centering
+\pgfplotsset{compat=1.8}
+\begin{tikzpicture}
+\begin{axis}[width=0.9\textwidth,height=5cm, ybar, bar width = 1,tick label style={/pgf/number format/fixed},scaled ticks=false,xlabel=$n$,ylabel= Seleções ($\%$)]
+\addplot table[x=n, y=p, col sep=comma] {tourn.csv};
+\end{axis}
+\end{tikzpicture}
+\caption{Seleções (em $\%$) em torneio para cada um dos 200 indivíduos após 10.000 seleções}
+\label{fig:tourn}
+\end{figure}
+
+ \begin{algorithm}[!ht]
+ \SetAlgoLined
+ \Entrada{Tamanho $n$ do subconjunto do torneio; tamanho $N_{pop}$ da população; probabilidade arbitrária $p$ da seleção do melhor indivíduo do torneio}
+ \Inicio{
+    $T:$ amostra de índices diferentes aleatórios $\in \{1, N_{pop}\}$ de tamanho $n$ \\
+    $w:$ vetor inicial de pesos de tamanho $n$ \\
+    \Para{cada elemento $i$ de $w$}{
+        $w_i \gets p \cdot (1 - p)^{n - 1}$   
+    }
+    $i_1 \gets $ índice aleatório $\in T$ ponderado por $w$ \\
+    \FacaEnqto{$i_1 = i_2$}{
+	$i_2 \gets$ índice aleatório $\in T$ ponderado por $w$
+    }
+    \Retorna{$i_1, i_2$}
+ }
+ \caption{\textsc{Seleção em torneio}}\label{alg:tourn}
+ \end{algorithm}
+
+\subsection{\textit{Crossover}}
+O \textit{crossover} é o processo de criação de indivíduos filhos com a troca de informação de genes dos indivíduos pais durante o AG. Os tipos mais comuns de algoritmos de \textit{crossover} envolvem dois pais e produzem dois filhos \cite{kora2006crossover}. Em um AG binário, o \textit{crossover} geralmente utiliza de um ponto de cruzamento onde, a partir daquele ponto, a informação de um novo indivíduo troca de pai. Como exemplo, dados dois parentes,
+
+\begin{equation}
+\begin{split}
+x_1 = [ r_1, x_1, y_1, \omega_1 ] \\
+x_2 = [ r_2, x_2, y_2, \omega_2 ]
+\end{split}
+\end{equation}
+
+\noindent o \textit{crossover} de $x_1$ e $x_2$ a partir do ponto de cruzamento em $y$ produziria então os filhos
+
+\begin{equation}
+\begin{split}
+y_1 = [ r_1, x_1, y_2, \omega_2 ] \\
+y_2 = [ r_2, x_2, y_1, \omega_1 ]
+\end{split}
+\end{equation}
+
+ O problema desta forma de \textit{crossover} em AGs reais é que, com a introdução de domínios contínuos das variáveis, nenhuma informação nova é adicionada com a utilização de operadores binários. Uma das possíveis soluções, e também uma das mais simples, para este problema é a utilização de um \textit{crossover} onde os valores dos genes são uma média dos valores dos atributos de cada pai, de forma que o cruzamento de $x_1$ e $x_2$ produziria 
+
+    \begin{equation}
+    \begin{split}
+    y = 0.5 x_1 + 0.5 x_2
+    \end{split}
+    \label{eq:lincross}
+    \end{equation}
+
+A equação \ref{eq:lincross} apresenta alguns problemas:
+\begin{enumerate}
+	\item O resultado do \textit{crossover} sempre estará limitado aos valores da média dentre os valores presentes em todas as possíveis combinações de pais, e não em todo o domínio de valores de cada variável.
+	\item Cada operação de \textit{crossover} resultaria em apenas um indivíduo filho, o que ocasionaria na necessidade de aplicar o operador mais vezes por iteração do AG.
+\end{enumerate}
+
+Para a resolução deste problema, é utilizado neste trabalho o \textit{crossover} aritmético, onde a criação de novos indivíduos $y_1$ e $y_2$ a partir dos pais $x_1$ e $x_2$ segue a fórmula
+
+    \begin{equation}
+    \label{eq:crossover}
+    \begin{split}
+    y_1 = \alpha x_1 + (1 - \alpha) x_2 \\
+    y_2 = \alpha x_2 + (1 - \alpha) x_1
+    \end{split}
+    \end{equation}
+
+\noindent onde $\alpha \in R \cap \{0, 1\}$ é um valor aleatório uniformemente distribuído. O valor de $\alpha$ define diretamente qual dos pais terá maior influência nos genes dos filhos, ao ser utilizado como proporção da composição de cada um dos atributos de cada $y$ gerado. A tabela \ref{tab:crossover} mostra os resultados de uma operação do \textit{crossover} aritmético a partir de dois indivíduos de uma população inicial. Este cruzamento está descrito em \ref{alg:crossover}.
+
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{llllll}
+\hline Indivíduo & $r$ & $x$ & $y$ & $\omega$ & $J(x_r,r,\omega)$ \\ \hline
+$x_1$ & 0.0084728&-0.0131772 & 0.0536399 & 0.0103933& 1.4459508 \\
+$x_2$&0.0044240&-0.0076760 & 0.0208155 & 0.0090751& 0.4956984 \\ \hline
+\multicolumn{5}{l}{\textit{Crossover} de $x_1$ e $x_2$ para $\alpha = 0.37089$} \\
+$y_1$&0.0059257 & -0.0097163 &  0.0329897 &  0.0095640& 0.4847576 \\
+$y_2$&0.0069711 & -0.0111368 &  0.0414656 &  0.0099044& 0.4742525 \\\hline
+\end{tabular}
+\caption{Exemplo de \textit{crossover} aritmético}
+\label{tab:crossover}
+\end{table}
+
+\begin{algorithm}[!ht]
+   \SetAlgoLined
+   \Entrada{Indivíduos $p_1, p_2$}
+   \Saida{Indivíduos $x_1, x_2$}
+   \Inicio{
+    $\alpha \gets$ número aleatório $\alpha \in \mathds{R} \cap \{0,1\}$ \\
+    $x_1 = p_1 \cdot \alpha + p_2 \cdot (1-alpha)$ \\
+    $x_2 = p_2 \cdot \alpha + p_1 \cdot (1-alpha)$ \\
+    \Retorna{$x_1,x_2$}
+   }
+   \caption{\textsc{Cruzamento aritmético contínuo}}\label{alg:crossover}
+ \end{algorithm}
+
+
+\subsection{Mutação}
+A mutação é, juntamente com o \textit{crossover}, uma das formas do AG de se explorar o domínio. Com a mutação é possível alterar as características de indivíduos sem a necessidade da influência de pais, aumentando assim a variabilidade da população e evitando uma convergência precoce dos indivíduos à um mínimo local. Para AGs binários, a mutação altera aleatoriamente um bit do cromossomo do indivíduo de 0 para 1. No caso da mutação em AGs reais, é possível implementar uma solução onde o valor de determinada característica $y_i$ seja alterada para um número aleatório $\alpha$ próximo retirado de uma distribuição uniforme dentro de um intervalo de tamanho $2\gamma_i$ da forma
+
+\begin{equation}
+y_i = y_i + \alpha, \alpha \in [-\gamma_i, \gamma_i]
+\end{equation}
+
+\noindent onde $\gamma_i$ seria escolhido com base na característica $i$ a ser alterada. Para pressionar os valores a tenderem ficar próximos de $y_i$, neste trabalho o valor de $\alpha$ é retirado de uma distribuição gaussiana com variância arbitrária $\sigma_i$, da forma
+
+    \begin{equation}
+    \label{eq:mutation}
+    y_i = y_i + \frac{1}{\sigma_i\sqrt{2\pi}}e^{-\frac{1}{2}(\frac{\alpha-y_i}{\sigma_i})^2}
+    \end{equation}
+    
+\noindent Desta forma os valores de cada atributo $y_i$ sofrerão, durante a mutação, alterações pequenas no espaço contínuo próximo ao próprio valor do atributo antes de sua mutação \cite{liu2012inverse}. O algoritmo \ref{alg:mutation} descreve este operador.
+
+\begin{algorithm}[!ht]
+   \SetAlgoLined
+   \Entrada{Indivíduo $x$}
+   \Saida{Indivíduo $y$}
+   \Inicio{
+    $\sigma :$ vetor com valores arbitrários para a cada atributo $x_i$ \\
+    \Para{cada atributo $i$ de $y$}{
+        $\gamma \gets$ número aleatório $\gamma \in \mathds{R} \cap \{0,1\}$ \\
+        $y_i \gets \frac{1}{\sigma_i\sqrt{2\pi}}e^{-\frac{1}{2}(\frac{\gamma-y_i}{\sigma})^2}$ 
+    }
+    \Retorna{$y$}
+   }
+   \caption{\textsc{Mutação gaussiana}}\label{alg:mutation}
+ \end{algorithm}
+
+\section{Diferentes estratégias de AG}
+A utilização de diferentes estratégias de AG para a resolução de diferentes problemas é uma prática comum na literatura. Diferentes estratégias geralmente definem como será a esquematização do algoritmo genético em si, bem como a ordem e proporção de aplicação de seus operadores. Dos tipos de AG mais utilizados na academia, dois são testados na detecção de câncer de mama: o tipo geracional e o \textit{steady-state}. Além destes, um novo tipo de AG também é proposto neste trabalho: o AG de aplicação independente de operadores.
+
+\subsection{AGs geracional e \textit{steady-state}}
+\label{sec:ag}
+O AG geracional é a forma mais tradicional da aplicação de algoritmos genéticos em problemas utilizados na academia. Sua construção se caracteriza, de forma geral, nas etapas definidas em ordem:
+\begin{enumerate}
+    \item Indivíduos são aleatoriamente selecionados da população inicial, gerada também de forma aleatória;
+    \item Aplicação do operador de cruzamento sobre esta seleção de indivíduos;
+    \item Aplicação do operador de mutação sobre os novos indivíduos gerados com determinada probabilidade.
+\end{enumerate} 
+
+Um algoritmo genético \textit{steady-state} difere-se de um AG geracional por não possuir gerações: cada iteração seleciona um par de genes para cruzamento, e então os filhos destes substituem os piores indivíduos na população original. No problema presente, cada indivíduo gerado pelo cruzamento possui uma probabilidade $pm$ de sofrer mutação.
+
+Ambos os algoritmos comportam-se de forma semelhante na formação de populações, de forma que cada população subsequente à inicial pode ser definida como mostra a figura \ref{fig:ags}. As etapas do AG geracional e \textit{steady-state} são descritos, respectivamente, nos algoritmos \ref{alg:ag} e \ref:{alg:gass}.
+
+
+\begin{figure}
+	
+	\centering
+	\begin{tikzpicture}[
+	node distance=1cm and 2cm,
+	text width=3cm,
+	minimum height= 1cm,
+	align = center,
+	-latex,
+	thick
+	]
+	
+	\node[draw,ellipse](inicio) at (0,0) {Início};
+	\node[draw,below =of inicio](start) {População};
+	\node[draw,right =of start](selection) {Torneio};
+	\node[draw,right =of selection](crossover) {Cruzamento};
+	\node[draw,below =of crossover](mutation) {Mutação};
+	\node[draw,left =of mutation](eval) {Avaliação};
+	\node[draw,left =of eval](merge) {Substituição};
+	\node[draw,diamond,below =of merge,aspect=3](sort) {$it > it\_max ?$};
+	\node[draw,below=1cm of sort,ellipse](fim) {Fim};
+	
+	\draw (inicio) -- (start);
+	\draw (start) -- (selection);
+	\draw (selection) -- (crossover);
+	\draw (crossover) -- (mutation);
+	\draw (mutation) -- (eval);
+	\draw (eval) -- (merge);
+	\draw (merge) -- (sort);
+	\draw (sort) -- node[above,sloped] {Sim} (fim);
+	\draw (sort) -- ++ (-3,0) -- ++ (0,4.5) node[style={fill=white},text width=0.8cm,minimum height = 1cm] {Não} |- (start) ;
+	\end{tikzpicture}
+	
+	\caption{Esquematização do algoritmo genético geracional e \textit{steady-state}}\label{fig:ags}
+	
+\end{figure}
+
+
+ \begin{algorithm}[!ht]
+   \SetAlgoLined
+   \Entrada{População inicial $p$, taxa de cruzamento $c$, taxa de mutação $m$, taxa de elitismo $e$}
+   \Inicio{
+   População vazia $p_f$ de tamanho = tamanho($p$)$\times  c$  \\
+   População vazia $p_e$ de tamanho = tamanho($p$)$\times e$ \\
+    \Para{cada geração $it = 1:it\_max$}{
+        $p_e \gets p(1:$tamanho($p$)$\times e)$ \\
+        \Para{cada par de filhos $x_1,x_2 \in p_f$}{
+            $p_1, p_2 \gets$ torneio($p$) \\
+            $x_1, x_2 \gets$ cruzamento($p_1,p_2$) \\
+            $x_1 \gets$ mutação($x_1$) \textbf{se} número aleatório $\sigma_1 \in \mathds{R} \cap \{0,1\} \leq m$ \\
+            $x_2 \gets$ mutação($x_2$) \textbf{se} número aleatório $\sigma_2 \in \mathds{R} \cap \{0,1\} \leq m$
+        }
+        $p \gets n$ melhores indivíduos das populações $p \cup p_e \cup p_x$, onde $p_x$ é a população de filhos gerados nas fases de cruzamento 
+     }
+   }
+   
+   \caption{\textsc{Algoritmo genético geracional}}\label{alg:ga}
+ \end{algorithm}
+ 
+ 
+ \begin{algorithm}[!ht]
+   \SetAlgoLined
+   \Entrada{População inicial $p$, taxa de mutação $m$}
+   \Inicio{
+   População vazia $f$ de tamanho = 2  \\
+    \Para{cada geração $it = 1:it\_max$}{
+            $p_1, p_2 \gets$ torneio($p$) \\
+            $x_1, x_2 \gets$ cruzamento($p_1,p_2$) \\
+            $x_1 \gets$ mutação($x_1$) \textbf{se} número aleatório $\sigma_1 \in \mathds{R} \cap \{0,1\} \leq m$ \\
+            $x_2 \gets$ mutação($x_2$) \textbf{se} número aleatório $\sigma_2 \in \mathds{R} \cap \{0,1\} \leq m$
+     }
+   }
+   
+   \caption{\textsc{Algoritmo genético steady-state}}\label{alg:gass}
+ \end{algorithm}
+
+\subsection{AG de aplicação independente dos operadores}
+Alguns dos problemas presentes na aplicação dos AGs \textit{steady-state} e geracional são a convergência precoce causada pela predominância da operação de \textit{crossover} sobre as demais etapas do processo do AG. Uma nova estratégia de AG proposta por este trabalho para amenizar este problema é o algoritmo genético com aplicação independente dos operadores. Este AG gera cada nova população através da união de grupos de indivíduos gerados a partir de cada operador de forma individual. Logo, indivíduos gerados por \textit{crossover} não sofrerão mutação nem vice-versa durante a transição de populações. Isto ajuda com que a diversidade adicionada pela mutação não esteja condicionada pelo \textit{crossover}, como ocorre nos outros algoritmos clássicos apresentados. Desta forma, uma parcela da população $pop_i$ selecionada para \textit{crossover} gera uma partição de $pop_{i+1}$, que é unida à uma outra partição gerada pela mutação, bem como partições de populações elitistas e parcialmente reinicializadas, descritos a seguir.
+
+Os conceitos de elitismo e reinicialização parcial de populações, podem ser descritas como ferramentas que auxiliam no desempenho da nova proposta de AG \cite{koumousis2006saw}. O elitismo aplicado no AG é definido pela injeção direta dos $k$ melhores indivíduos de determinada geração para a próxima sem sofrer alterações. Esta estratégia mantém os melhores genes das populações e aumenta a chance de serem utilizados pelos operadores para gerarem indivíduos melhores dentre si ou a partir de uma combinação destes com o restante da população. A proporção da população elitista a ser injetada diretamente na população deve ser mensurada de forma que não seja tão grande a ponto de forçar uma convergência prematura a estes indivíduos. Após uma quantidade pré-definida de iterações do AG, uma reinicialização parcial é aplicada na população principal e uma fração dos indivíduos é substituída por indivíduos gerados aleatoriamente. Esta técnica melhora a diversidade genética das populações enquanto diminui a chance de uma convergência precoce dos indivíduos após um processo normal de convergência pelo AG. A esquematização deste algoritmo é ilustrada na figura \ref{fig:gaai}, e suas etapas são descritas no algoritmo \ref{alg:gaai}.
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[
+	node distance=2cm,
+	text width=3cm,
+	minimum height= 1cm,
+	align = center,
+	-latex,
+	thick
+	]
+	
+	\node[draw,ellipse](inicio) at (0,0) {Início};
+	\node[draw,below of=inicio,text width=10cm](start) {População};
+	\node[draw,below of=start](selection) {Torneio};
+	\node[draw,left=1cm of selection](elitism) {Elitismo};
+	\node[draw,below of=selection](crossover) {Cruzamento};
+	\node[draw,right=1cm of selection](mutation) {Mutação};
+	\node[draw,below of=crossover, text width=10cm](newpop) {Nova População};
+	\node[draw,diamond,below of=newpop,aspect=3](sort) {$it > it\_max ?$};
+	\node[draw,below=1cm of sort,ellipse](fim) {Fim};
+	
+	\draw (inicio) -- (start);
+	\draw (start) -- (selection);
+	\draw (start.south -| elitism.north) -- (elitism);
+	\draw (start.south -| mutation.north) -- (mutation);
+	\draw (selection) -- (crossover);
+	\draw (crossover) -- (newpop);
+	\draw (elitism) -- (elitism.south |- newpop.north);
+	\draw (mutation) -- (mutation.south |- newpop.north);
+	\draw (newpop) -- (sort);
+	\draw (sort) -- node[above,sloped] {Sim} (fim);
+	\draw (sort) -- ++ (-7,0) -- ++ (0,5) node[style={fill=white},text width=0.8cm,minimum height = 1cm] {Não} |- (start) ;
+	\end{tikzpicture}
+	
+	\caption{Esquematização do algoritmo genético geracional de aplicação independente dos operadores}\label{fig:gaai}
+	
+\end{figure}
+
+    \begin{algorithm}[!ht]
+   \SetAlgoLined
+   \Entrada{População inicial $p$, taxa de cruzamento $c$, taxa de mutação $m$, taxa de elitismo $e$}
+   \Inicio{
+   População vazia $p_f$ de tamanho = tamanho($p$)$\times c$  \\
+   População vazia $p_m$ de tamanho = tamanho($p$)$\times m$ \\
+   População vazia $p_e$ de tamanho = tamanho($p$)$\times e$ \\
+    \Para{cada geração $it = 1:it\_max$}{
+        $p_e \gets p(1:$tamanho($p$)$\times e)$ \\
+        \Para{cada par de filhos $x_1,x_2 \in p_f$}{
+            $p_1, p_2 \gets$ torneio($p$) \\
+            $x_1, x_2 \gets$ cruzamento($p_1,p_2$) \\
+        }
+        \Para{cada indivíduo $x \in p_m$} {
+                    $x \gets$ mutação($x$) \textbf{se} número aleatório $\sigma_1 \in \mathds{R} \cap \{0,1\} \leq m$
+        }
+     }
+   }
+   
+   \caption{\textsc{Algoritmo genético com aplicação independente dos operadores sobre a população}}\label{alg:gaai}
+ \end{algorithm}
+
