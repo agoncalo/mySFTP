@@ -9,12 +9,13 @@ var dnode = require('dnode');
 
 var server = dnode({
 	useradd : function (s, p, cb) {
-		console.log("Adding user");
-		connection.connect();
-		var sql = "INSERT INTO users (nome, senha) VALUES ('"+s+"', MD5('"+p+"'))"
+		var sql = "INSERT INTO users (nome, senha) VALUES ('"+s+"', MD5('"+p+"'))";
+		console.log(sql);
 		connection.query(sql, function(err, results) {
+			console.log(err);
+			console.log(results);
 			if(err) {
-				cb(err);
+				cb("ERRO");
 			} else {
 				var d = dnode.connect(7000);
 				d.on('remote', function (remote) {
@@ -25,36 +26,44 @@ var server = dnode({
 				});
 			}
 		});
-		connection.end();
 		cb("OK");
 	},
 	userdel : function (s, cb) {
-		connection.connect();
-		var sql = "DELETE FROM users WHERE nome="+s;
+		var sql = "DELETE FROM users WHERE nome='"+s+"'";
+		console.log(sql);
 		connection.query(sql, function(err, results) {
-			if(err) cb(err);
-		});
-		connection.end();
-		var d = dnode.connect(7000);
-		d.on('remote', function (remote) {
-			remote.userdel(s, function(x) {
-				console.log(x);
-			});
-			d.end();
+			console.log(err);
+			console.log(results);
+			if(err) {
+				cb("ERRO");
+			} else {
+				var d = dnode.connect(7000);
+				d.on('remote', function (remote) {
+					remote.userdel(s, function(x) {
+						console.log(x);
+					});
+					d.end();
+				});
+			}
 		});
 		cb("OK");
 	},
 	verify : function (s, p, cb) {
-		connection.connect();
-		var sql = "SELECT EXISTS(SELECT 1 FROM users WHERE nome=" + s + " AND senha=MD5(" + s + "))";
+		var sql = "SELECT EXISTS(SELECT 1 FROM users WHERE nome='" + s + "' AND senha=MD5('" + p + "')) AS r";
+		console.log(sql);
 		connection.query(sql, function(err, results) {
-			if(err) cb(err);
+			console.log(err);
+			console.log(results);
+			if(err) cb("ERRO");
 			else {
-				cb(results[0]);
+				if(results[0]['r'] == 1) {
+				
+					cb("Y");
+				} else {
+					cb("N");
+				}
 			};
-			d.end();
 		});
-		connection.end();
 	}
 });
 
