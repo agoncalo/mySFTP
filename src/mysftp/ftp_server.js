@@ -21,8 +21,8 @@ var server = dnode({
 		var list = ls(s + "*");
 		console.log(list);
 		list.forEach(function(element) {
-			if(fs.lstatSync(s+element.name).isDirectory()) {
-				element.name = element.name + "/";
+			if(fs.lstatSync(s+element.file).isDirectory()) {
+				element.file = element.file + "/";
 			}
 		});
 		cb(list);
@@ -36,8 +36,8 @@ var server = dnode({
 	},
 	get : function (s, cb) {
 		fs.readFile(s, 'utf8', function(err,contents) {
-			console.log(err);
-			cb(contents);
+			if (err) cb("ERRO");
+			else cb(contents);
 		});
 	},
 	cd : function (s, cb) {

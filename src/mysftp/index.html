@@ -83,6 +83,8 @@ $(document).ready(function() {
 	});
 	
 	$("#enviar").submit(function() {
+		e.preventDefault();
+	
 		var formData = new FormData(this);
 		
 		$ajax({
@@ -90,18 +92,20 @@ $(document).ready(function() {
 			type: 'POST',
 			data: formData,
 			success: function(data) {
-				alert(data)
+				$("#ajaxlog").html(data);
 			},
 			xhr: function() { // Custom XMLHttpRequest
-            var myXhr = $.ajaxSettings.xhr();
-            if (myXhr.upload) {
-                myXhr.upload.addEventListener('progress', function() {
-					alert("carregando");
-                }, false);
-            }
-            return myXhr;
-        }
-	});
+		        var myXhr = $.ajaxSettings.xhr();
+		        if (myXhr.upload) {
+		            myXhr.upload.addEventListener('progress', function() {
+						alert("carregando");
+		            }, false);
+		        }
+		        return myXhr;
+        	}
+		});
+		e.preventDefault();
+		return false;
 	});
 });
 </script>

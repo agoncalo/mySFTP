@@ -1,0 +1,55 @@
+\chapter{Referencial Teórico}
+\label{sec:def}
+Este capítulo descreve conceitos básicos de problemas inversos de biotransferência de calor e a definição do problema específico a ser resolvido pela metodologia de aplicação de AGs. A seção \ref{sec:pennes} descreve a equação utilizada para cálculos no modelo do câncer de mama; a seção \ref{sec:mef} descreve a utilização do método dos elementos finitos para a discretização da equação de Pennes no domínio do modelo e a seção \ref{sec:objfunc} formaliza a definição do problema tratado neste trabalho.
+
+\section{Equação de biotransferência de calor de Pennes}
+\label{sec:pennes}
+A equação de biotransferência de calor de \citeonline{pennes1948analysis} (do inglês \textit{Pennes' bioheat transfer equation}, ou PBHTE) é, segundo \citeonline{huang2015bioheat},  ``o modelo padrão de predição de distribuição de temperatura em tecidos vivos em mais de meio século''. A PBHTE é utilizada para descrever o comportamento da temperatura em tecidos e é baseada na lei de Fourier, assumindo-se que a transferência de calor ocorre nos capilares, negligenciando efeitos de vasos sanguíneos que possam influenciar na temperatura \cite{shih2007analytical,sharma2009numerical,shahnazari2013investigation}. A equação pode ser definida como, dado um tecido $\Omega$, a condutividade térmica $k$, a densidade $\rho_b$ e o calor específico $c_b$ do sangue, taxa de perfusão sanguínea $\omega_b$ e geração metabólica de calor $Q_m$, temos que
+
+\begin{equation}
+    \nabla \cdot k\nabla T + \omega_b \rho_b c_b (T_a - T) + Q_m = 0, \textrm{em} \ \Omega
+    \label{eq:pennes}
+\end{equation}
+
+\noindent onde $T$ é a temperatura do tecido e $T_a$ a temperatura arterial \cite{gonccalo2017solution}. Com a PBHTE é possível obter a temperatura nos diversos nós da malha, que será posteriormente descrita, através da discretização do domínio da mama pelo MEF. A taxa de perfusão sanguínea pode ser entendida como a capacidade de circulação do sangue através do sistema circulatório, possuindo influência direta, juntamente com o calor gerado pelo metabolismo do tecido e o calor específico do sangue, sobre a temperatura do domínio.
+
+\section{Método dos elementos finitos}
+\label{sec:mef}
+A solução analítica da equação \ref{eq:pennes} não é factível para o domínio complexo e heterogêneo da mama. Logo, este trabalho utiliza soluções numéricas baseadas no MEF para a resolução da PBHTE no domínio da mama. O método dos elementos finitos é um método de discretização que condiciona domínios contínuos em um número finito de elementos, teoricamente reduzindo o custo computacional de se calcular a equação sobre o modelo de mama. A utilização do MEF tem como objetivo resolver uma versão aproximada e objetivamente mais simples de equações complexas e é utilizado para a resolução de diversas classes de problemas presentes nas áreas de física, engenharia e outras ciências \cite{loureiro2012metodo}. O MEF utilizado neste trabalho utiliza da forma fraca da equação \ref{eq:pennes}, que é descrita em \cite[p. 5]{gonccalo2017solution} como:
+
+\begin{quote}
+Assumindo que $S = \{ T \in H^1 (\Omega) | T = \bar{T} \ \textrm{em} \ \Gamma_D\}$ e $V = \{v \in H^1 (\Omega) | v = 0 \ \textrm{em} \ \Gamma_D\}$ sejam, respectivamente, os espaços das funções de admissão e teste onde $\bar{T}$ é a condição de contorno de Dirichlet imposta na porção de contorno $\Gamma_D$, procura-se encontrar $T \in S$ onde
+
+\begin{equation}
+    \int\limits_{\Omega} (\nabla v \cdot k \nabla T - v \omega_b \rho_b c_b (T_a - T) - v Q_m ) d\Omega - \int\limits_{\Gamma_N} vk \nabla T \cdot \textrm{\textbf{n}} d \Gamma = 0, \forall v \in V
+\end{equation}
+
+\noindent $\Gamma_N$ é indicado como a porção do tipo Neumann com \textbf{n} sendo o vetor normal apontado para fora. A discretização da forma fraca necessita que o domínio $\bar{\Omega}$ seja dividido em elementos finitos não sobrepostos $\bar{\Omega}_e$. Para isso é necessário considerar os espaços dimensionais $S^h \subset S$ e $V^h \subset V$. Ao considerar $T(x) \approx T^h(x) = \sum^n_{i=1} N_i (x) T_i$ para $n$ nós na malha, é possível obter o seguinte sistema de equações lineares: 
+
+
+\begin{equation}
+\label{eq:lin}
+    (\textrm{\textbf{K}} + \textrm{\textbf{M}})\textrm{\textbf{T}} = \textrm{\textbf{F}}
+\end{equation}
+
+\noindent onde \textbf{K} $\in \mathds{R}^{N \times N}$ é a matriz de condutividade, \textbf{M} $\in \mathds{R}^{N \times N}$ a matriz de perfusão, \textbf{T} $\in \mathds{R}^{N}$ o vetor de temperatura dos nós e \textbf{F} $\in \mathds{R}^{N}$ o vetor de adjacência com o grau de liberdade desconhecido $N$.
+\end{quote}
+
+\noindent Onde a condição de contorno de Dirichlet especifica os valores que a função diferencial parcial deve tomar no contorno do domínio, enquanto que a condição do tipo Neumann indica o fluxo presente no contorno do domínio. Assim é possível calcular como ocorre a transferência de calor dentre os nós da malha a partir da condição que permite que uma função de valor constante esteja presente nos nós de contorno do modelo. O cálculo da PBHTE discretizada no FEM é então integrado ao AG atual a fim de se obter a temperatura da camada mais externa do modelo da mama. Isto permite o cálculo da função objetivo sobre cada indivíduo criado ao longo de suas iterações.
+
+\section{Problema inverso e função objetivo}
+\label{sec:objfunc}
+\label{sec:inverse}
+Um problema inverso pode ser descrito como um problema onde, dado um número de observações de um determinado fenômeno, tenta-se presumir com precisão o modelo que gerou aquela observação. Difere-se portanto do problema direto, ou simulação, onde tenta-se prever o resultado de determinado processo a partir de suas entradas. Um problema inverso também possui diversos possíveis resultados, diferentemente do problema direto onde só há um único possível resultado \cite[p. 6]{tarantola2005inverse}.
+
+O trabalho de \citeonline{gonccalo2017solution} explora a possibilidade de definir o problema de busca de tumores como um problema inverso de biotransferência de calor. Através da PBHTE discretizado em um domínio de tecido pelo MEF, estima-se a temperatura pontual de cada nó presente na pele a partir do modelo definido. Pode-se então definir um problema inverso de biotransferência de calor onde, a partir de medições de temperatura na parte mais externa do tecido, tenta-se estimar os parâmetros que geraram aquela observação através da diferença dentre a observação no modelo de referência e no modelo criado pelo AG. A função objetivo busca minimizar o erro dentre as amostras de temperaturas dos modelos de referência e dos modelos gerados pelo AG, que pode ser descrita na forma
+
+\begin{equation}
+J(x_r, r, \omega) = \frac{1}{2}\sum_{i \in \eta_{\Gamma_{S}}}(\hat{T}_i - T_i(x_r,r,\omega))^2
+\label{eq:objfunc}
+\end{equation}
+
+\noindent onde o tumor $T_u$ possui seu centro localizado em $x_r$, raio $r$ e a taxa de perfusão sanguínea $\omega$ do tumor. $\eta_{\Gamma_{S}}$ é o conjunto de nós sobre o tecido $\Gamma_{S}$. $\hat{T}_i$ é a temperatura coletada no $i$-ésimo nó da pele do modelo de mama utilizado como referência, e $T_i(x_r,r,\omega)$ o valor estimado para aquele nó para os parâmetros desconhecidos $x_r$, $r$ e $\omega$. O valor de $T_i$ é computado para cada nó através da PBHTE em sua forma numérica discretizada pelo MEF e apresentada na seção \ref{sec:mef}.
+
+
+
